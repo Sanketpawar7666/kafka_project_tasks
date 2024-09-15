@@ -1,0 +1,37 @@
+# spark_job.py
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, count, avg, countDistinct
+
+# MySQL configuration
+MYSQL_URL = "jdbc:mysql://localhost:3306/clickstream_db"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "password"
+
+# Spark session
+spark = SparkSession.builder \
+    .appName("ClickstreamAggregator") \
+    .getOrCreate()
+
+# Load clickstream data from HBase (as an example, using Spark DataFrame)
+df = spark.read \
+    .format("org.apache.hadoop.hbase.spark") \
+    .option("hbase.table", "clickstream_events") \
+    .load()
+
+# Perform aggregation
+aggregated_df = df.groupBy("url", "country") \
+    .agg(
+        count("url").alias("clicks"),
+        countDistinct("user_id").alias("unique_users"),
+        avg("time_spent").alias("avg_time_spent")
+    )
+
+# Write to MySQL
+aggregated_df.write \
+    .format("jdbc") \
+    .option("url", MYSQL_URL) \
+    .option("user", MYSQL_USER) \
+    .option("password", MYSQL_PASSWORD) \
+    .option("dbtable", "aggregated_clickstream") \
+    .mode("append") \
+    .save()
