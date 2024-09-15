@@ -1,0 +1,21 @@
+DELIMITER //
+
+CREATE PROCEDURE GetClicks(IN input_url VARCHAR(255), IN input_country VARCHAR(100))
+BEGIN
+    SELECT clicks FROM aggregated_clickstream
+    WHERE url = input_url AND country = input_country;
+END //
+
+CREATE PROCEDURE GetUniqueUsers(IN input_url VARCHAR(255), IN input_country VARCHAR(100))
+BEGIN
+    SELECT unique_users FROM aggregated_clickstream
+    WHERE url = input_url AND country = input_country;
+END //
+
+CREATE PROCEDURE GetAvgTimeSpent(IN input_url VARCHAR(255), IN input_country VARCHAR(100))
+BEGIN
+    SELECT avg_time_spent FROM aggregated_clickstream
+    WHERE url = input_url AND country = input_country;
+END //
+
+DELIMITER ;
