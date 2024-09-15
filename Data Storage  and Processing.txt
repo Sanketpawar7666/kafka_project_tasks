@@ -1,0 +1,39 @@
+# kafka_consumer.py
+from kafka import KafkaConsumer
+import happybase
+import json
+
+# Kafka configuration
+KAFKA_TOPIC = "clickstream"
+KAFKA_SERVER = "localhost:9092"
+
+# HBase configuration
+HBASE_SERVER = "localhost"
+TABLE_NAME = "clickstream_events"
+
+# Connect to HBase
+connection = happybase.Connection(HBASE_SERVER)
+table = connection.table(TABLE_NAME)
+
+# Kafka consumer
+consumer = KafkaConsumer(
+    KAFKA_TOPIC,
+    bootstrap_servers=KAFKA_SERVER,
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+)
+
+for message in consumer:
+    event = message.value
+    # Insert data into HBase
+    row_key = f"{event['user_id']}_{event['timestamp']}"
+    table.put(row_key, {
+        'click_data:user_id': event['user_id'],
+        'click_data:timestamp': event['timestamp'],
+        'click_data:url': event['url'],
+        'geo_data:country': event['country'],
+        'geo_data:city': event['city'],
+        'user_agent_data:user_agent': event['user_agent']
+    })
+    print(f"Consumed and stored: {event}")
